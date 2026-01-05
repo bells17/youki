@@ -1,6 +1,9 @@
 ARG VARIANT="bullseye"
 FROM mcr.microsoft.com/vscode/devcontainers/rust:1-${VARIANT}
 
+ENV container=docker
+STOPSIGNAL SIGRTMIN+3
+
 # Install docker with youki
 COPY <<EOF /etc/docker/daemon.json
   {
@@ -24,12 +27,18 @@ apt-get install -y \
   libseccomp-dev \
   libssl-dev \
   libsystemd-dev \
-  pkg-config
+  pkg-config \
+  systemd \
+  systemd-sysv \
+  dbus
 
 # For debugging
 apt-get install -y \
   podman \
   bpftrace
+
+# TODO
+ln -sf /lib/systemd/systemd /sbin/init
 
 # Since systemd is not running inside the Dev Container,
 # but the default events_logger for podman is set to journald, container startup fails.
@@ -48,7 +57,13 @@ rustup install nightly
 rustup component add rustfmt
 rustup component add clippy 
 
+# Install cross
+RUSTFLAGS="" cargo install cross --git https://github.com/cross-rs/cross
+
 # Install mdbook
 VERSION=$(curl -sSfL https://api.github.com/repos/rust-lang/mdBook/releases/latest | jq -r .tag_name)
 curl -sSfL https://github.com/rust-lang/mdBook/releases/download/$VERSION/mdbook-$VERSION-$(uname -m)-unknown-linux-musl.tar.gz | tar -xzvC /usr/bin/ mdbook
 EOF
+
+VOLUME ["/sys/fs/cgroup"]
+CMD ["/sbin/init"]

@@ -24,11 +24,18 @@
 		}
 	},
 	"privileged": true,
+	"overrideCommand": false,
 	"runArgs": [
 		"--name",
-		"youki-devcontainer"
+		"youki-devcontainer",
+    "--privileged",
+    "--cgroupns=host",
+    "--tmpfs", "/run",
+    "--tmpfs", "/run/lock",
+    "-v", "/sys/fs/cgroup:/sys/fs/cgroup:rw"
 	],
 	"build": {
 		"dockerfile": "Dockerfile"
-	}
+	},
+	"postStartCommand": "sudo loginctl enable-linger vscode"
 }
